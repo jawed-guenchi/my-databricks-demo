@@ -1,66 +1,135 @@
-# CLAUDE.md — Cadrage du projet
+# CLAUDE.md — Instructions pour Claude Code
 
-> Ce fichier est lu automatiquement par Claude Code au démarrage. Il définit **comment tu (Claude) dois te comporter** dans ce repo. Suis-le strictement.
+> Ce fichier est lu automatiquement au démarrage. Il te dit **exactement quoi faire, étape par étape**, dans ce repo. Suis-le strictement. En cas de doute, applique les **Règles d'or** (section finale).
 
-## But du repo
+---
 
-Point d'entrée d'équipe pour créer **rapidement des démos Databricks** destinées à des pitchs client : fausses données réalistes + pipeline + application, sur un cas d'usage métier concret. L'utilisateur décrit sa démo **en langage naturel** — il n'y a pas de commande à retenir. Ton rôle : l'onboarder si besoin, puis construire la démo de façon cadrée.
+## 🎯 Rôle du repo (résumé en une phrase)
 
-## Au démarrage de chaque session
+Aider un consultant à produire une **démo Databricks** (fausses données + pipeline + application/dashboard) pour un pitch client, à partir d'une **description en langage naturel**. Il n'y a **aucune commande slash** à retenir : l'utilisateur décrit, tu construis — après validation.
 
-Un hook `SessionStart` (`.claude/hooks/sync-skills.ps1`) s'exécute automatiquement et affiche un bloc `=== Etat environnement Databricks Demo ===`. **Lis-le** et agis en conséquence :
+Ton job se résume à deux moments :
+1. **Onboarding** — t'assurer que l'environnement est prêt (CLI + connexion Databricks). À faire une seule fois.
+2. **Construction de démo** — transformer une demande en langage naturel en données + pipeline + app.
 
-- **`[skills] ... synchronisees`** : les Databricks Agent Skills officielles viennent d'être mises à jour dans `.claude/skills/`. Tu n'as rien à faire — elles sont dispo et à jour. (Elles couvrent CLI, données synthétiques, pipelines, apps, dashboards, Unity Catalog, etc.)
-- **`[cli] Databricks CLI ABSENT`** → propose d'installer le CLI (voir Onboarding).
-- **`[auth] NON authentifie`** → propose de faire le login OAuth (voir Onboarding).
-- Si CLI présent **et** authentifié : pas d'onboarding, passe directement au besoin de l'utilisateur.
+---
 
-N'exécute jamais l'onboarding en silence : explique brièvement ce que tu vas faire et laisse l'utilisateur valider.
+## ÉTAPE 0 — À chaque démarrage : lire le statut du hook
 
-## Onboarding (premier lancement)
+Un hook `SessionStart` exécute `.claude/hooks/sync-skills.ps1` automatiquement. Il affiche un bloc :
 
-À faire uniquement si le hook signale un manque.
+```
+=== Etat environnement Databricks Demo (hook SessionStart) ===
+[skills] ...
+[cli] ...
+[auth] ...
+```
 
-1. **Installer le Databricks CLI** (unifié, moderne — surtout PAS l'ancien package pip `databricks-cli`) :
-   ```powershell
-   winget install Databricks.DatabricksCLI
-   ```
-   Après install, un nouveau terminal peut être nécessaire pour rafraîchir le PATH. Vérifie : `databricks version` (attendu ≥ 0.205 ; idéalement v1.x).
+**Lis ce bloc et oriente-toi :**
 
-2. **Authentifier via OAuth** (aucun secret n'est stocké dans le repo — le token va dans le Windows Credential Manager) :
+| Ce que tu vois | Ce que ça veut dire | Ce que tu fais |
+|---|---|---|
+| `[skills] ... synchronisees` ou `Deja a jour` | Les skills Databricks officielles sont installées et à jour dans `.claude/skills/` | Rien — elles sont prêtes à l'emploi |
+| `[cli] Databricks CLI ABSENT` | Le CLI n'est pas installé | Va à **ÉTAPE 1** |
+| `[auth] NON authentifie` | Pas connecté à un workspace | Va à **ÉTAPE 2** |
+| `[cli] ... present` **et** `[auth] Authentifie` | Tout est prêt | Saute l'onboarding → **ÉTAPE 3** |
+
+> ⚠️ Ne fais jamais l'onboarding en silence. Explique en une phrase ce que tu vas faire, puis laisse l'utilisateur valider avant d'exécuter une commande.
+
+Si le bloc de statut n'apparaît pas (hook non déclenché), tu peux le lancer manuellement :
+`powershell -NoProfile -ExecutionPolicy Bypass -File .claude/hooks/sync-skills.ps1`
+
+---
+
+## ÉTAPE 1 — Installer le CLI Databricks (si absent)
+
+Propose puis, après accord, exécute :
+```powershell
+winget install Databricks.DatabricksCLI
+```
+- C'est le **CLI unifié moderne**. Surtout **PAS** l'ancien package pip `databricks-cli` (déprécié).
+- Après l'installation, le PATH peut nécessiter un **nouveau terminal**. Vérifie avec `databricks version` (attendu : ≥ 0.205, idéalement v1.x).
+- Puis enchaîne sur l'ÉTAPE 2.
+
+---
+
+## ÉTAPE 2 — Connecter l'utilisateur à Databricks (si non authentifié)
+
+1. **Demande l'URL de son workspace** (ex : `https://dbc-xxxx.cloud.databricks.com`). Ne devine jamais.
+2. Propose puis exécute :
    ```powershell
    databricks auth login --host <URL-du-workspace>
    ```
-   Demande à l'utilisateur l'URL de son workspace Databricks (ex : `https://dbc-xxxx.cloud.databricks.com`). Un login navigateur s'ouvre. Vérifie ensuite : `databricks current-user me`.
+   Un login **navigateur** s'ouvre (OAuth). Le jeton est stocké dans le **Windows Credential Manager**, **jamais** dans un fichier du repo.
+3. Vérifie : `databricks current-user me` (doit renvoyer l'utilisateur).
 
-   > Ne propose jamais de coller un token PAT dans un fichier du repo. OAuth uniquement.
+> ❌ Ne propose JAMAIS de coller un token PAT dans un fichier. OAuth uniquement.
 
-## Construire une démo (workflow cadré)
+Quand CLI + auth sont OK, tu es prêt à construire.
 
-Quand l'utilisateur décrit un client / un cas d'usage, suis ces étapes **dans l'ordre** :
+---
 
-1. **Cadrer** avant de coder. Clarifie :
-   - Le **secteur** et le **cas d'usage** métier.
-   - L'**histoire** : la donnée doit raconter une histoire (un incident / une anomalie → un impact chiffré en €/$ → une analyse possible → une action). Pas de données plates et uniformes. Si l'utilisateur n'a pas d'histoire précise, **propose-en une**.
-   - Le **catalog / schema Unity Catalog cible** (ne jamais deviner — demande ; sur un workspace Free, souvent le catalogue `workspace`).
-2. **Proposer un plan** (tables + distributions, pipeline, app) et le faire **valider** avant de générer le moindre code. Utilise le mode plan si la tâche est non triviale.
-3. **Scaffolder** la démo sous `demos/<nom-demo>/` en **Databricks Asset Bundle** (DAB) : `databricks.yml` + `resources/` + `src/`. Une démo = un bundle autonome.
-4. **Générer les 3 briques** en t'appuyant sur les skills synchronisées :
-   - **Données synthétiques** (skill `databricks-synthetic-data-gen`) : Spark + Faker en serverless, distributions réalistes (jamais uniformes), intégrité référentielle.
-   - **Pipeline** (skill `databricks-pipelines`) : Lakeflow Spark Declarative Pipeline, pattern medallion, en gardant les dimensions utiles au dashboard/app.
-   - **Application** (skills `databricks-apps` / `databricks-apps-python` / `databricks-app-design`) : par défaut AppKit si Node.js v22+ est dispo, sinon Streamlit (Python).
-5. **Valider** la config : `databricks bundle validate` (ajoute `--target dev`). Corrige jusqu'à validation propre.
+## ÉTAPE 3 — Construire une démo (le cœur du travail)
 
-## Règles d'or (non négociables)
+Déclenchée dès que l'utilisateur décrit un client ou un cas d'usage. Suis ces sous-étapes **dans l'ordre**, sans en sauter.
 
-- **Plan avant action** : pour toute tâche non triviale, propose une stratégie et fais-la valider avant d'exécuter.
-- **Jamais de déploiement sans feu vert explicite** : `databricks bundle deploy`, `databricks apps deploy`, ou toute commande qui **crée / modifie des ressources dans le workspace** exige une confirmation dédiée de l'utilisateur, même si un plan global a déjà été approuvé.
-- **Full refresh de pipeline** : opération dangereuse (perte de données possible) — ne jamais lancer sans validation explicite.
-- **Secrets** : ne jamais committer de token, `.databrickscfg`, `.env`, clé. OAuth uniquement pour l'auth.
-- **Git** : confirme avant tout `git push`.
+### 3.1 — Cadrer AVANT de coder
+Pose (au minimum) ces trois questions si l'info manque :
+- **Secteur & cas d'usage** — retail, banque, télécom, santé… et quel problème métier ?
+- **L'histoire des données** — la donnée doit raconter une histoire : *un incident / une anomalie → un impact chiffré en €/$ → une analyse possible → une action.* Jamais de données plates/uniformes. Si l'utilisateur n'a pas d'idée, **propose une histoire** convaincante.
+- **Catalog / schema Unity Catalog cible** — où écrire les données ? Ne devine pas ; demande. (Sur un workspace Free, c'est souvent le catalogue `workspace`.)
 
-## Repères
+### 3.2 — Proposer un plan et le faire valider
+Présente un plan clair : liste des tables (+ ordres de grandeur et distributions), la logique du pipeline, le type d'app/dashboard. **N'écris aucun code de génération avant l'accord.** Pour une tâche non triviale, passe par le mode plan.
 
-- Les skills vivent dans `.claude/skills/` (gitignorées, synchronisées auto — voir `docs/ARCHITECTURE.md`).
-- Détails de fonctionnement : `docs/ARCHITECTURE.md`.
-- Gouvernance entreprise (AI Gateway, UCode, Service Policies, guardrails, Smart Scaling) : `docs/GOVERNANCE.md` — roadmap, pas encore implémentée.
+### 3.3 — Scaffolder la démo comme un bundle
+Crée la démo sous `demos/<nom-demo>/` en **Databricks Asset Bundle (DAB)** :
+```
+demos/<nom-demo>/
+├── databricks.yml     # bundle + variables (catalog, schema) + target dev
+├── resources/         # une ressource par fichier : *.pipeline.yml, *.app.yml, *.job.yml
+└── src/               # code : pipeline, app, notebooks
+```
+Une démo = un bundle autonome. Charge la skill `databricks-dabs` pour la structure exacte.
+
+### 3.4 — Générer les 3 briques (appuie-toi sur les skills)
+Les skills dans `.claude/skills/` contiennent les bonnes pratiques détaillées — **charge la skill correspondante avant de coder chaque brique** :
+
+| Brique | Skill à charger | Points clés |
+|---|---|---|
+| Données synthétiques | `databricks-synthetic-data-gen` | Spark + Faker en serverless ; distributions réalistes (jamais uniformes) ; intégrité référentielle |
+| Pipeline | `databricks-pipelines` | Lakeflow Spark Declarative Pipeline ; pattern medallion ; garder les dimensions utiles au dashboard |
+| Application / dashboard | `databricks-apps`, `databricks-apps-python`, `databricks-app-design` (app) **ou** `databricks-aibi-dashboards` (dashboard natif) | App custom → AppKit si Node ≥ 22, sinon Streamlit. Simple dashboard → AI/BI (Lakeview) |
+
+Pour toute action CLI/auth, la skill parente est `databricks-core`.
+
+### 3.5 — Valider
+Lance `databricks bundle validate --target dev`. Corrige jusqu'à validation propre.
+
+### 3.6 — Déployer (UNIQUEMENT sur demande explicite)
+Le déploiement crée de vraies ressources dans le workspace. **Demande une confirmation dédiée** avant :
+```powershell
+databricks bundle deploy --target dev
+databricks bundle run <resource> --target dev
+```
+Même si un plan global a été approuvé plus tôt, cette étape exige un « oui » explicite ici.
+
+---
+
+## 🛡️ Règles d'or (non négociables)
+
+1. **Plan avant action** — toute tâche non triviale : propose une stratégie, fais-la valider, PUIS exécute.
+2. **Jamais de déploiement / création de ressource sans feu vert explicite** — `bundle deploy`, `apps deploy`, création de cluster/warehouse/catalog… toujours confirmer juste avant.
+3. **Full refresh de pipeline = dangereux** (perte de données possible) — jamais sans validation explicite.
+4. **Zéro secret dans le repo** — pas de token, pas de `.databrickscfg`, pas de `.env` commité. OAuth uniquement pour l'auth.
+5. **Confirme avant tout `git push`.**
+6. **Réponds en français** (langue de l'équipe), sauf demande contraire.
+
+---
+
+## 📍 Repères
+
+- **Skills** : dans `.claude/skills/` (gitignorées, synchronisées auto par le hook). Ne les modifie pas à la main — elles sont écrasées à chaque session.
+- **Fonctionnement interne** (hook, cache, précédence des skills, tuning) : `docs/ARCHITECTURE.md`.
+- **Gouvernance entreprise** (AI Gateway, UCode, Service Policies, guardrails, Smart Scaling) : `docs/GOVERNANCE.md` — roadmap, pas encore implémentée.
+- **Démos déjà créées** : sous `demos/`.
