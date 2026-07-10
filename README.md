@@ -12,7 +12,7 @@ Quand vous décrivez une démo (« un cas de churn client pour un opérateur té
 
 1. 🗃️ **De fausses données réalistes** qui racontent une histoire métier (un incident, un impact en €, une analyse possible).
 2. 🔄 **Un pipeline** de transformation (Lakeflow / Spark) qui prépare ces données.
-3. 📊 **Une application ou un dashboard** Databricks pour présenter le résultat au client.
+3. 🖥️ **Une application web React** (via AppKit, le SDK Databricks) — soignée et interactive, **pensée pour être montrée aux métiers**, pas un simple prototype.
 
 Le tout est structuré « as code » (Databricks Asset Bundles), donc **déployable et réutilisable**.
 
@@ -26,7 +26,7 @@ Le tout est structuré « as code » (Databricks Asset Bundles), donc **déploya
 | **git** et **winget** | Fournis avec Windows 11 |
 | **Un workspace Databricks** | Un compte [Databricks Free](https://www.databricks.com/learn/free-edition) suffit pour commencer |
 
-> 💡 Vous **n'avez pas besoin** d'installer le CLI Databricks ni de configurer la connexion à l'avance : Claude Code détecte ce qui manque au premier lancement et vous guide. Ce starter est prévu pour **Windows** (le script d'automatisation est en PowerShell).
+> 💡 Vous **n'avez pas besoin** d'installer à l'avance le CLI Databricks, **Node.js** (nécessaire aux apps React) ni de configurer la connexion : Claude Code détecte ce qui manque au premier lancement et vous guide pour tout installer. Ce starter est prévu pour **Windows** (le script d'automatisation est en PowerShell).
 
 ---
 
@@ -49,9 +49,9 @@ Vous n'avez qu'à **suivre ce qu'il propose et valider**.
 ### 3. Décrire votre démo… en langage naturel
 Dites simplement ce que vous voulez, par exemple :
 
-> « Fais-moi une démo pour un client de la **grande distribution** : une rupture de stock qui fait chuter le chiffre d'affaires, avec un dashboard pour l'analyser. »
+> « Fais-moi une démo pour un client de la **grande distribution** : une rupture de stock qui fait chuter le chiffre d'affaires, avec une app pour l'analyser. »
 
-> « Je pitche une **banque**, je veux une démo de **détection de fraude** avec des données réalistes et une petite app. »
+> « Je pitche une **banque**, je veux une démo de **détection de fraude** avec des données réalistes et une app web soignée. »
 
 Claude vous **présentera d'abord un plan** (quelles tables, quel pipeline, quelle app). Vous validez, puis il génère. **Rien n'est déployé sur votre workspace sans votre accord explicite.**
 

@@ -6,11 +6,13 @@
 
 ## 🎯 Rôle du repo (résumé en une phrase)
 
-Aider un consultant à produire une **démo Databricks** (fausses données + pipeline + application/dashboard) pour un pitch client, à partir d'une **description en langage naturel**. Il n'y a **aucune commande slash** à retenir : l'utilisateur décrit, tu construis — après validation.
+Aider un consultant à produire une **démo Databricks** (fausses données + pipeline + **application web React**) pour un pitch client, à partir d'une **description en langage naturel**. Il n'y a **aucune commande slash** à retenir : l'utilisateur décrit, tu construis — après validation.
+
+> 🎨 **L'application doit être une vraie app web React (AppKit), montrable aux métiers** : soignée, interactive, pertinente pour le cas d'usage. **Pas de Streamlit** — l'objectif est un rendu « pro » qu'on présente à un décideur, pas un prototype data.
 
 Ton job se résume à deux moments :
-1. **Onboarding** — t'assurer que l'environnement est prêt (CLI + connexion Databricks). À faire une seule fois.
-2. **Construction de démo** — transformer une demande en langage naturel en données + pipeline + app.
+1. **Onboarding** — t'assurer que l'environnement est prêt (CLI Databricks + Node.js + connexion Databricks). À faire une seule fois.
+2. **Construction de démo** — transformer une demande en langage naturel en données + pipeline + app React.
 
 ---
 
@@ -23,6 +25,7 @@ Un hook `SessionStart` exécute `.claude/hooks/sync-skills.ps1` automatiquement.
 [skills] ...
 [cli] ...
 [auth] ...
+[node] ...
 ```
 
 **Lis ce bloc et oriente-toi :**
@@ -31,8 +34,9 @@ Un hook `SessionStart` exécute `.claude/hooks/sync-skills.ps1` automatiquement.
 |---|---|---|
 | `[skills] ... synchronisees` ou `Deja a jour` | Les skills Databricks officielles sont installées et à jour dans `.claude/skills/` | Rien — elles sont prêtes à l'emploi |
 | `[cli] Databricks CLI ABSENT` | Le CLI n'est pas installé | Va à **ÉTAPE 1** |
+| `[node] Node.js ABSENT` (ou < 22) | Node.js manquant → pas d'app React possible | Va à **ÉTAPE 1** |
 | `[auth] NON authentifie` | Pas connecté à un workspace | Va à **ÉTAPE 2** |
-| `[cli] ... present` **et** `[auth] Authentifie` | Tout est prêt | Saute l'onboarding → **ÉTAPE 3** |
+| `[cli] ... present`, `[node] ... present` **et** `[auth] Authentifie` | Tout est prêt | Saute l'onboarding → **ÉTAPE 3** |
 
 > ⚠️ Ne fais jamais l'onboarding en silence. Explique en une phrase ce que tu vas faire, puis laisse l'utilisateur valider avant d'exécuter une commande.
 
@@ -41,15 +45,24 @@ Si le bloc de statut n'apparaît pas (hook non déclenché), tu peux le lancer m
 
 ---
 
-## ÉTAPE 1 — Installer le CLI Databricks (si absent)
+## ÉTAPE 1 — Installer les outils requis (si absents)
 
-Propose puis, après accord, exécute :
+Propose puis, après accord, installe ce qui manque :
+
+**a) CLI Databricks** (si `[cli] ABSENT`) :
 ```powershell
 winget install Databricks.DatabricksCLI
 ```
 - C'est le **CLI unifié moderne**. Surtout **PAS** l'ancien package pip `databricks-cli` (déprécié).
-- Après l'installation, le PATH peut nécessiter un **nouveau terminal**. Vérifie avec `databricks version` (attendu : ≥ 0.205, idéalement v1.x).
-- Puis enchaîne sur l'ÉTAPE 2.
+- Vérifie avec `databricks version` (attendu : ≥ 0.295 pour `databricks apps init` / AppKit).
+
+**b) Node.js ≥ 22** (si `[node] ABSENT` ou trop ancien) — **requis pour les apps React/AppKit** :
+```powershell
+winget install OpenJS.NodeJS.LTS
+```
+- Vérifie avec `node --version` (attendu : v22+).
+
+Après une installation, le PATH peut nécessiter un **nouveau terminal**. Puis enchaîne sur l'ÉTAPE 2.
 
 ---
 
@@ -98,8 +111,14 @@ Les skills dans `.claude/skills/` contiennent les bonnes pratiques détaillées 
 | Brique | Skill à charger | Points clés |
 |---|---|---|
 | Données synthétiques | `databricks-synthetic-data-gen` | Spark + Faker en serverless ; distributions réalistes (jamais uniformes) ; intégrité référentielle |
-| Pipeline | `databricks-pipelines` | Lakeflow Spark Declarative Pipeline ; pattern medallion ; garder les dimensions utiles au dashboard |
-| Application / dashboard | `databricks-apps`, `databricks-apps-python`, `databricks-app-design` (app) **ou** `databricks-aibi-dashboards` (dashboard natif) | App custom → AppKit si Node ≥ 22, sinon Streamlit. Simple dashboard → AI/BI (Lakeview) |
+| Pipeline | `databricks-pipelines` | Lakeflow Spark Declarative Pipeline ; pattern medallion ; garder les dimensions utiles à l'app |
+| **Application web React** | `databricks-apps` + `databricks-app-design` | **Standard = AppKit (TypeScript + React)**. Scaffolder avec `databricks apps init`. Front soigné, montrable aux métiers. Plugin **Analytics** pour interroger le SQL Warehouse (typé, caché) ; plugin **Genie** pour du questionnement en langage naturel. Déployer avec `databricks apps deploy`. |
+
+**Sur l'application (important) :**
+- **Toujours une app React via AppKit** — pas de Streamlit. L'objectif est un rendu « produit », interactif et pertinent pour le décideur métier (KPI clairs, graphes, drill-down, storytelling du cas d'usage).
+- Charge **`databricks-app-design`** pour l'UX (choix du genre d'écran, layout, KPI, couleurs sémantiques, états loading/empty/error, notation IBCS, affichage de confiance pour les résultats Genie).
+- AppKit requiert **Node.js ≥ 22** (voir onboarding). Si vraiment indisponible et non installable, préviens l'utilisateur et propose un dashboard **AI/BI (Lakeview)** natif via `databricks-aibi-dashboards` comme repli — **jamais** Streamlit.
+- Une fois l'app déployée, son **service principal** doit avoir les droits de lecture (USE CATALOG/SCHEMA + SELECT) sur le schéma des données : c'est une **création de droits** → demande confirmation avant de l'exécuter (voir Règle d'or 2).
 
 Pour toute action CLI/auth, la skill parente est `databricks-core`.
 

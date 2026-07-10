@@ -41,7 +41,6 @@ function Invoke-Git {
 }
 
 # --- 1/3 : Synchronisation des skills -------------------------------------------------
-$skillsSynced = $false
 try {
     if (-not (Test-CommandExists 'git')) {
         throw 'git introuvable sur le PATH'
@@ -87,7 +86,6 @@ try {
         $headSha | Set-Content -Path $stampFile -Encoding utf8 -NoNewline
         $status.Add("[skills] $count skills Databricks synchronisees (officiel @ $shortSha).")
     }
-    $skillsSynced = $true
 }
 catch {
     $existing = 0
@@ -127,9 +125,25 @@ if ($cliOk) {
     $status.Add('[auth] Non verifiable (CLI absent).')
 }
 
+# --- 4/4 : Node.js (requis pour les apps React / AppKit) ------------------------------
+$nodeOk = $false
+if (Test-CommandExists 'node') {
+    $nodeVer = (& node --version 2>$null)   # ex : v22.3.0
+    $major = 0
+    if ($nodeVer -match 'v(\d+)\.') { $major = [int]$Matches[1] }
+    if ($major -ge 22) {
+        $nodeOk = $true
+        $status.Add("[node] Node.js $nodeVer present (OK pour AppKit/React).")
+    } else {
+        $status.Add("[node] Node.js $nodeVer trop ancien (< 22). AppKit requiert Node >= 22 : winget install OpenJS.NodeJS.LTS")
+    }
+} else {
+    $status.Add('[node] Node.js ABSENT. Requis pour les apps React/AppKit : winget install OpenJS.NodeJS.LTS')
+}
+
 # --- Sortie : contexte injecte lu par Claude au demarrage -----------------------------
 Write-Output '=== Etat environnement Databricks Demo (hook SessionStart) ==='
 $status | ForEach-Object { Write-Output $_ }
-if (-not $cliOk -or -not $authOk) {
+if (-not $cliOk -or -not $authOk -or -not $nodeOk) {
     Write-Output '>> Action Claude : guider l''utilisateur pour l''etape d''onboarding manquante (voir CLAUDE.md).'
 }
