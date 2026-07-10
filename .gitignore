@@ -1,0 +1,39 @@
+# === Skills Databricks synchronisees automatiquement (hook SessionStart) ===
+# Le contenu est rempli au runtime par .claude/hooks/sync-skills.ps1 ; on ne le versionne pas
+# (toujours a jour depuis le repo officiel). On garde uniquement le .gitkeep.
+.claude/skills/*
+!.claude/skills/.gitkeep
+
+# Cache local du repo officiel des skills
+.claude/.cache/
+
+# Settings locaux (non partages) de Claude Code
+.claude/settings.local.json
+
+# === Databricks ===
+.databricks/
+.databrickscfg
+*.dabconfig
+
+# === Secrets / env ===
+.env
+.env.*
+*.pem
+*.key
+*.token
+
+# === Python ===
+__pycache__/
+*.pyc
+.venv/
+venv/
+.ipynb_checkpoints/
+
+# === Node ===
+node_modules/
+
+# === OS / editeur ===
+.DS_Store
+Thumbs.db
+.vscode/*
+!.vscode/settings.json

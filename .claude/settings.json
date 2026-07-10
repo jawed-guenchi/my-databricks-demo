@@ -1,0 +1,17 @@
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "matcher": "startup",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "powershell -NoProfile -ExecutionPolicy Bypass -File \"${CLAUDE_PROJECT_DIR}/.claude/hooks/sync-skills.ps1\"",
+            "timeout": 90,
+            "statusMessage": "Mise a jour des skills Databricks..."
+          }
+        ]
+      }
+    ]
+  }
+}

@@ -1,0 +1,4 @@
+# Ce dossier est rempli automatiquement par le hook SessionStart (.claude/hooks/sync-skills.ps1)
+# avec toutes les Databricks Agent Skills officielles. Son contenu est gitignore (voir .gitignore).
+# Ce fichier .gitkeep garantit que le dossier existe des le clone, pour que Claude Code y detecte
+# les skills a chaud lors de la synchro.

@@ -1,0 +1,3 @@
+# Chaque demo client est scaffoldee ici dans son propre sous-dossier : demos/<nom-demo>/
+# sous forme de Databricks Asset Bundle (databricks.yml + resources/ + src/).
+# Decris ta demo a Claude Code en langage naturel : il cree la structure ici.
