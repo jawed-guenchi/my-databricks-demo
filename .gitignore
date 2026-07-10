@@ -10,6 +10,12 @@
 # Settings locaux (non partages) de Claude Code
 .claude/settings.local.json
 
+# === Demos ===
+# Les demos sont des recettes jetables / specifiques a un client : elles vivent dans le
+# workspace Databricks, pas dans Git. On garde seulement le dossier (via .gitkeep).
+demos/*
+!demos/.gitkeep
+
 # === Databricks ===
 .databricks/
 .databrickscfg
