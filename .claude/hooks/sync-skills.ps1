@@ -135,10 +135,10 @@ if (Test-CommandExists 'node') {
         $nodeOk = $true
         $status.Add("[node] Node.js $nodeVer present (OK pour AppKit/React).")
     } else {
-        $status.Add("[node] Node.js $nodeVer trop ancien (< 22). AppKit requiert Node >= 22 : winget install OpenJS.NodeJS.LTS")
+        $status.Add("[node] Node.js $nodeVer trop ancien (< 22). Installer sans admin : scripts/setup-node.ps1")
     }
 } else {
-    $status.Add('[node] Node.js ABSENT. Requis pour les apps React/AppKit : winget install OpenJS.NodeJS.LTS')
+    $status.Add('[node] Node.js ABSENT. Requis pour les apps React/AppKit. Installer sans admin : scripts/setup-node.ps1')
 }
 
 # --- Sortie : contexte injecte lu par Claude au demarrage -----------------------------

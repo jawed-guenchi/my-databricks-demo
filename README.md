@@ -39,27 +39,34 @@ git clone https://github.com/jawed-guenchi/my-databricks-demo.git
 Ouvrez le dossier dans VS Code. Si une bannière « **Do you trust the authors of this folder?** » apparaît, cliquez **Yes / Trust** — c'est indispensable pour que l'automatisation démarre.
 
 ### 2. Ouvrir Claude Code et se laisser guider
-Lancez Claude Code dans ce dossier. À l'ouverture, un script se lance **tout seul** : il met à jour les compétences Databricks et vérifie votre environnement.
+Lancez Claude Code dans ce dossier. À l'ouverture, un script se lance **tout seul** : il met à jour les compétences Databricks et vérifie votre environnement. Claude vous présente alors une **checklist** de ce qui est prêt et de ce qui manque, et propose de tout mettre en place :
 
-- Si le **CLI Databricks n'est pas installé** → Claude vous propose de l'installer (une commande, il s'en charge).
-- Si vous n'êtes **pas connecté** → Claude vous demande l'URL de votre workspace et lance une connexion sécurisée dans le navigateur (**OAuth** — aucun mot de passe ni jeton n'est stocké dans le repo).
+- **CLI Databricks** manquant → Claude l'installe.
+- **Node.js** manquant (nécessaire à l'app React) → Claude installe une version **portable, sans droits administrateur** (aucune fenêtre Windows à valider).
+- **Pas connecté** → Claude vous demande l'URL de votre workspace et lance une connexion sécurisée dans le navigateur (**OAuth** — aucun mot de passe ni jeton n'est stocké dans le repo).
 
 Vous n'avez qu'à **suivre ce qu'il propose et valider**.
 
-### 3. Décrire votre démo… en langage naturel
+### 3. Décrire votre démo… et la personnaliser étape par étape
 Dites simplement ce que vous voulez, par exemple :
 
-> « Fais-moi une démo pour un client de la **grande distribution** : une rupture de stock qui fait chuter le chiffre d'affaires, avec une app pour l'analyser. »
+> « Fais-moi une démo pour un client de la **grande distribution** : une rupture de stock qui fait chuter le chiffre d'affaires. »
 
-> « Je pitche une **banque**, je veux une démo de **détection de fraude** avec des données réalistes et une app web soignée. »
+Ensuite, **Claude vous fait personnaliser chaque étape** (sans jamais vous imposer de tout spécifier — vous pouvez toujours répondre « propose-moi ») :
 
-Claude vous **présentera d'abord un plan** (quelles tables, quel pipeline, quelle app). Vous validez, puis il génère. **Rien n'est déployé sur votre workspace sans votre accord explicite.**
+- 🗃️ **Les données** — Claude conçoit les tables, ou vous les cadrez (jusqu'au niveau table si vous le souhaitez).
+- 🔄 **Le pipeline** — quelles transformations / analyses, combien de couches.
+- 🖥️ **L'application** — quels éléments d'interface : **KPI, courbes, camembert, barres, tableau filtrable, recherche/traçabilité, filtres…**
+
+À chaque étape, Claude **présente un plan que vous validez** avant qu'il génère. **Rien n'est déployé sur votre workspace sans votre accord explicite.**
 
 ---
 
 ## 🔒 Ce que le repo garantit
 
-- **Compétences toujours à jour** : à chaque session, toutes les [Databricks Agent Skills](https://github.com/databricks/databricks-agent-skills) officielles sont resynchronisées automatiquement. Rien à installer ni à maintenir.
+- **Personnalisable de bout en bout** : Claude vous fait choisir le niveau de détail à chaque étape (données, pipeline, interface), sans jamais vous forcer à tout spécifier.
+- **Aucune install manuelle ni droits admin** : CLI, Node.js (portable) et connexion sont mis en place par Claude.
+- **Compétences toujours à jour** : à chaque session, toutes les [Databricks Agent Skills](https://github.com/databricks/databricks-agent-skills) officielles sont resynchronisées automatiquement. Rien à maintenir.
 - **Sécurité** : connexion par OAuth ; vos identifiants restent dans le gestionnaire d'identifiants de Windows, **jamais dans le repo**. Aucun secret n'est commité.
 - **Garde-fous** : Claude propose toujours un plan avant d'agir, et ne déploie / ne crée jamais de ressources dans votre workspace sans confirmation.
 - **Reproductible** : chaque démo vit dans son propre dossier `demos/<nom>/` sous forme de bundle déployable.
@@ -69,17 +76,20 @@ Claude vous **présentera d'abord un plan** (quelles tables, quel pipeline, quel
 ## 🗂️ Structure du repo
 
 ```
-├── README.md              ← vous êtes ici (guide humain)
-├── CLAUDE.md              ← les instructions que Claude Code suit automatiquement
+├── README.md               ← vous êtes ici (guide humain)
+├── CLAUDE.md               ← les instructions que Claude Code suit automatiquement
 ├── .claude/
-│   ├── settings.json      ← déclenche la mise à jour des skills à chaque session
-│   ├── hooks/
-│   │   └── sync-skills.ps1 ← le script qui synchronise les skills + vérifie l'environnement
-│   └── skills/            ← skills Databricks (remplies automatiquement, non versionnées)
-├── demos/                 ← vos démos client (une par sous-dossier)
+│   ├── settings.json       ← déclenche la mise à jour des skills à chaque session
+│   ├── hooks/sync-skills.ps1 ← synchronise les skills + vérifie l'environnement
+│   └── skills/             ← skills Databricks (remplies automatiquement, non versionnées)
+├── scripts/
+│   ├── setup-node.ps1      ← installe Node.js portable (sans admin)
+│   └── Run-Sql.ps1         ← exécute un fichier .sql sur un SQL Warehouse
+├── demos/                  ← vos démos client (une par sous-dossier, non versionnées)
 └── docs/
-    ├── ARCHITECTURE.md    ← comment ça marche en détail
-    └── GOVERNANCE.md      ← usage entreprise (sécurité, coûts, gouvernance)
+    ├── APPKIT-DEPLOYMENT.md ← recette détaillée données→pipeline→app + dépannage
+    ├── ARCHITECTURE.md      ← comment ça marche en détail
+    └── GOVERNANCE.md        ← usage entreprise (sécurité, coûts, gouvernance)
 ```
 
 ---
@@ -92,8 +102,14 @@ Elles ne sont pas dans Git : le script `sync-skills.ps1` les télécharge dans `
 **Le script `.ps1` est-il partagé ?**
 Oui, il est **versionné dans le repo** (c'est le mécanisme). Ce qu'il *produit* (les skills) est régénéré localement.
 
+**Faut-il des droits administrateur ?**
+Non. Node.js est installé en version **portable** dans votre profil utilisateur (script `scripts/setup-node.ps1`) — aucune fenêtre d'élévation Windows.
+
+**Puis-je tout personnaliser, ou c'est imposé ?**
+Tout est personnalisable : les tables, le pipeline, et l'interface de l'app (KPI, camembert, tableau filtrable, filtres, recherche…). Claude vous demande le niveau de détail voulu et propose des défauts — vous ne subissez rien.
+
 **Je suis sur Mac ?**
-Ce starter cible Windows (script PowerShell). Sur Mac, il faudra adapter le script — dites-le à Claude Code.
+Ce starter cible Windows (scripts PowerShell). Sur Mac, dites-le à Claude Code pour adapter les scripts.
 
 **Ça a coûté / déployé quelque chose sans que je le veuille ?**
 Non. Toute création de ressource dans votre workspace passe par une confirmation explicite.
